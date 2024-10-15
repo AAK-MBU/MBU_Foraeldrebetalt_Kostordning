@@ -1,9 +1,7 @@
 """This module contains the main process of the robot."""
-import os
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
 from robot_framework.subprocesses.helper_functions import SAPApplication
 from robot_framework.subprocesses.sap_create_invoice import InvoiceHandler
-from robot_framework.initialize import initialize
 
 
 def process(orchestrator_connection: OrchestratorConnection) -> None:
