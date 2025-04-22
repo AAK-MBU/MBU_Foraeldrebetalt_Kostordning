@@ -22,6 +22,6 @@ The extracted data is then uploaded as individual elements to a queue for furthe
 #### Handle queue
 
 - `"transactionCode": "zdkd_opret_faktura"`
-- `"process": "queue_uploader"`
+- `"process": "handle_queue"`
 
 This process retrieves queue elements and creates invoices for parent-paid lunches in SAP based on the data.
