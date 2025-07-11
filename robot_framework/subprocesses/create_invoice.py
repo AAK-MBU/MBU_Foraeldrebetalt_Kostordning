@@ -4,6 +4,8 @@ It includes functions to create an invoice handler instance and to create and sa
 """
 
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
+
+from robot_framework.exceptions import BusinessError
 from robot_framework.subprocesses.invoice_handler import InvoiceHandler
 
 
@@ -56,6 +58,9 @@ def create_and_save_invoice(
         invoice_obj.save_invoice()
         print("Invoice created successfully.")
         orchestrator_connection.log_trace("Invoice created.")
+    except BusinessError as e:
+        print(f"Business error while creating invoice: {e}")
+        raise
     except Exception as e:
         print(f"Error creating invoice: {e}")
         raise

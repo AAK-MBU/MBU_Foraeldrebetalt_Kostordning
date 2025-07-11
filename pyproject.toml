@@ -3,8 +3,8 @@ requires = ["setuptools>=65.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "robot_framework"
-version = "0.0.2"
+name = "mbu-foraeldrebetalt-kostordning"
+version = "1.0.0"
 authors = [
   { name="MBU", email="rpa@mbu.aarhus.dk" },
 ]
@@ -20,11 +20,18 @@ dependencies = [
     "Pillow",
     "itk-dev-shared-components",
     "pandas",
-    "openpyxl"
+    "openpyxl",
+    "pyodbc"
 ]
 
 [project.optional-dependencies]
 dev = [
   "pylint",
   "flake8"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+  "robot_framework",
 ]

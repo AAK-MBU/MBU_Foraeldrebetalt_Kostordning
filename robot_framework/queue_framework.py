@@ -19,6 +19,7 @@ from robot_framework import finalize
 def main():
     """The entry point for the framework. Should be called as the first thing when running the robot."""
     orchestrator_connection = OrchestratorConnection.create_connection_from_args()
+
     sys.excepthook = log_exception(orchestrator_connection)
 
     orchestrator_connection.log_trace("Robot Framework started.")
@@ -35,7 +36,9 @@ def main():
             # Queue loop
             while task_count < config.MAX_TASK_COUNT:
                 task_count += 1
-                queue_element = orchestrator_connection.get_next_queue_element(config.QUEUE_NAME)
+                queue_element = orchestrator_connection.get_next_queue_element(
+                    config.QUEUE_NAME
+                )
 
                 if not queue_element:
                     orchestrator_connection.log_info("Queue empty.")
@@ -43,10 +46,18 @@ def main():
 
                 try:
                     process.process(orchestrator_connection, queue_element)
-                    orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE)
+                    orchestrator_connection.set_queue_element_status(
+                        queue_element.id, QueueStatus.DONE
+                    )
 
                 except BusinessError as error:
-                    handle_error("BusinessException", None, error, queue_element, orchestrator_connection)
+                    handle_error(
+                        "BusinessException",
+                        None,
+                        error,
+                        queue_element,
+                        orchestrator_connection,
+                    )
 
             break  # Break retry loop
 
@@ -54,7 +65,13 @@ def main():
         # pylint: disable-next = broad-exception-caught
         except Exception as error:
             error_count += 1
-            handle_error("ApplicationException", error_count, error, queue_element, orchestrator_connection)
+            handle_error(
+                "ApplicationException",
+                error_count,
+                error,
+                queue_element,
+                orchestrator_connection,
+            )
 
     reset.clean_up(orchestrator_connection)
     reset.close_all(orchestrator_connection)

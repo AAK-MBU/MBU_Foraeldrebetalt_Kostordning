@@ -10,7 +10,7 @@ Make sure to include the following process arguments:
 
 ### Upload To Queue
 
-- `"transactionCode": "zdkd_opret_faktura"`
+- `"transactionCode": ""`
 - `"process": "queue_uploader"`
 
 This process retrieves the relevant Excel files from SharePoint and extracts the necessary data. 
@@ -18,7 +18,10 @@ The extracted data is then uploaded as individual elements to a queue for furthe
 
 ### Handle queue
 
-- `"transactionCode": "zdkd_opret_faktura"`
-- `"process": "handle_queue"`
+- `"transactionCode": ""`
+- `"process": "queue_handler"`
 
 This process retrieves queue elements and creates invoices for parent-paid lunches in SAP based on the data.
+
+
+TODO: Download files from Sharepoint, store them in a local folder. (initialize.py)

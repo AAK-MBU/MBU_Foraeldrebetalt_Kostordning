@@ -1,25 +1,27 @@
-"""
-This script processes Excel files in a specified folder, extracting data from a specific sheet
+"""Process Excel files in a specified folder and extract data from a specific sheet.
+
+This script extracts data from a sheet matching next month's name and year.
 """
 
-import os
 import json
-from datetime import datetime
+import os
+from datetime import datetime, UTC
+
 import pandas as pd
-from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
 from dateutil.relativedelta import relativedelta
+from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
+
 from robot_framework.config import QUEUE_NAME
 
 
 def process_excel_files(
     folder_path: str, orchestrator_connection: OrchestratorConnection
 ) -> list:
-    """
-    Process Excel files in a folder, extracting data only from the sheet that matches
+    """Process Excel files in a folder, extracting data only from the sheet that matches
     next month's name and year in Danish (e.g., "maj 25").
 
     Stops reading when first column is empty or contains 'i alt' (case-insensitive).
-    """
+    """  # noqa: D205
     all_data = []
 
     # Get next month and year (2-digit year)
@@ -72,8 +74,8 @@ def process_excel_files(
                     usecols="B",
                 )
                 hovedtrans_value = (
-                    str(hovedtrans_df.iat[0, 0]).strip()
-                    if pd.notna(hovedtrans_df.iat[0, 0])
+                    str(hovedtrans_df.iloc[0, 0]).strip()
+                    if pd.notna(hovedtrans_df.iloc[0, 0])
                     else ""
                 )
 
@@ -86,8 +88,8 @@ def process_excel_files(
                     usecols="I",
                 )
                 institution_value = (
-                    str(institution_df.iat[0, 0]).strip()
-                    if pd.notna(institution_df.iat[0, 0])
+                    str(institution_df.iloc[0, 0]).strip()
+                    if pd.notna(institution_df.iloc[0, 0])
                     else ""
                 )
 
@@ -109,7 +111,7 @@ def process_excel_files(
                         if pd.notna(r2)
                         else str(r1).strip()
                     )
-                    for r1, r2 in zip(row1, row2)
+                    for r1, r2 in zip(row1, row2, strict=False)
                 ]
                 cleaned_headers = [
                     col.replace(":", "").replace(".", "").strip()
@@ -164,17 +166,18 @@ def process_excel_files(
 def create_queue_items(
     folder_path: str, orchestrator_connection: OrchestratorConnection
 ) -> list:
-    """
-    This function would contain the logic to create queue items in your system
-    For now, we'll just print the data to simulate this process
+    """Create queue items in your system (simulation).
 
-    arguments:
+    For now, just print the data to simulate this process.
+
+    Arguments:
     folder_path : str
         The path to the folder containing the Excel files.
 
-    returns:
+    Returns:
     list of dicts
         A list of dictionaries where each dictionary represents a queue item.
+
     """
     excel_data = process_excel_files(
         folder_path=folder_path, orchestrator_connection=orchestrator_connection
@@ -198,6 +201,7 @@ def create_queue_items(
             "sub_transaction_fee_inst_amount": row.get("gebyr (ins)"),
             "payment_recipient_identifier": "02",
             "service_recipient_identifier": "02",
+            "institution_number": row.get("institutionnumber"),
             "row_number": row.get("rownumber"),
         }
         queue_items.append(queue_item)
@@ -208,11 +212,18 @@ def create_queue_items(
 def add_queue_items_to_orchestrator(
     queue_items: list, orchestrator_connection: OrchestratorConnection
 ) -> None:
+    """Add queue items to the orchestrator.
+
+    For now, just print the data to simulate this process.
     """
-    This function would contain the logic to add queue items to your orchestrator
-    For now, we'll just print the data to simulate this process"
-    """
-    current_month_year = datetime.now().strftime("%m%Y")
+    current_month_year = datetime.now(UTC).strftime("%m%Y")
+    if current_month_year is None:
+        orchestrator_connection.log_error(
+            "Current month and year could not be determined."
+        )
+        msg = "Current month and year could not be determined."
+        raise ValueError(msg)
+
     all_ref = [
         (
             data.get("main_transaction_id", "unknown")
@@ -245,9 +256,7 @@ def add_queue_items_to_orchestrator(
 def process_and_create_queue_items(
     folder_path: str, orchestrator_connection: OrchestratorConnection
 ) -> None:
-    """
-    Main function to process Excel files and create queue items in the specified folder.
-    """
+    """Process Excel files and create queue items in the specified folder."""
     orchestrator_connection.log_info(f"Processing Excel files in folder: {folder_path}")
     orchestrator_connection.log_info("Creating queue items...")
     items = create_queue_items(
