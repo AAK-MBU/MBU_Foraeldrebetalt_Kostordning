@@ -2,6 +2,8 @@
 
 import time
 
+from robot_framework.exceptions import BusinessError
+
 
 class InvoiceHandler:
     """
@@ -43,6 +45,28 @@ class InvoiceHandler:
         self.session.findById("wnd[0]/usr/ctxtP_IHS_IN").text = content_type
         self.session.findById("wnd[0]/usr/txtP_NBS_IN").text = base_system_id
         self.session.findById("wnd[0]/tbar[1]/btn[8]").press()
+
+        time.sleep(2)
+        # Check if popup window exists
+        try:
+            popup = self.session.findById("/app/con[0]/ses[0]/wnd[1]")
+            if popup:
+                error_message = popup.findById("usr/txtMESSTXT1").text
+                print(f"Popup message: {error_message}")
+                # If popup exists, check the message and click the button
+                if "CPR-nr:" in error_message:
+                    popup.findById("tbar[0]/btn[0]").press()
+                    raise BusinessError(
+                        f"Business partner {business_partner_id} not found in SAP: {error_message}"
+                    )
+        except BusinessError as be:
+            print(f"Business error while checking popup: {be}")
+            raise
+        except Exception:  # pylint: disable=broad-except
+            # If popup does not exist, continue
+            pass
+
+        print("break")
 
     def _create_invoice_row(
         self,
@@ -176,7 +200,12 @@ class InvoiceHandler:
             Identifier of the service recipient.
         """
         try:
-            self.open_business_partner(business_partner_id, content_type, base_system_id)
+            self.open_business_partner(
+                business_partner_id, content_type, base_system_id
+            )
+        except BusinessError as be:
+            print(f"Business error while opening business partner: {be}")
+            raise
         except Exception as e:
             print(f"Error opening business partner: {e}")
             raise
@@ -242,7 +271,6 @@ class InvoiceHandler:
             self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
             print(f"Error inserting new line. {e}")
             raise
-
 
         # Sub institution fee row
         try:

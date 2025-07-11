@@ -23,13 +23,17 @@ class SAPApplication:
         """
         self.orchestrator_connection.log_trace("Open SAP.")
         creds_sap = self.orchestrator_connection.get_credential("sap_kostordning")
-        sap_login.login_using_cli(
-            username=creds_sap.username,
-            password=creds_sap.password,
-            client='751',
-            system='P02',
-            timeout=60
-        )
+        try:
+            sap_login.login_using_cli(
+                username=creds_sap.username,
+                password=creds_sap.password,
+                client='751',
+                system='P02',
+                timeout=60
+            )
+        except Exception as error:
+            print(f"Error logging in to SAP: {error}")
+            raise
 
     def get_session(self, session_number: int):
         """
