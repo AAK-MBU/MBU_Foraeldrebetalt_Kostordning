@@ -1,6 +1,7 @@
 """This module defines any initial processes to run when the robot starts."""
 
 import json
+import sys
 
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
 
@@ -22,14 +23,12 @@ def initialize(orchestrator_connection: OrchestratorConnection) -> None:
     if oc_args_json["process"] == "queue_uploader":
         orchestrator_connection.log_trace("Starting queue uploader.")
 
-        # TODO: Download files from Sharepoint, store them in a local folder.
-
         process_and_create_queue_items(
             folder_path=config.FOLDER_PATH,
             orchestrator_connection=orchestrator_connection,
         )
         orchestrator_connection.log_trace("Queue uploader finished. Stopping execution.")
-        exit()
+        sys.exit()
 
     if oc_args_json["process"] == "queue_handler":
         orchestrator_connection.log_trace("Starting queue handler.")
@@ -45,4 +44,4 @@ def initialize(orchestrator_connection: OrchestratorConnection) -> None:
         orchestrator_connection.log_error(
             f"Process argument {oc_args_json['process']} is not recognized."
         )
-        exit()
+        sys.exit()
