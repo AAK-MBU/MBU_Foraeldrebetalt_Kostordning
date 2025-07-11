@@ -29,3 +29,9 @@ dev = [
   "pylint",
   "flake8"
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+  "robot_framework",
+]
