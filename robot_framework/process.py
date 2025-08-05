@@ -37,11 +37,11 @@ def process(
     )
 
     # Check if the termination date is set
-    if check_termination_date(queue_element_data.get('start_date'), queue_element_data):
+    if check_termination_date(queue_element_data.get("start_date"), queue_element_data):
+        msg = "Found termination date. Invoice creation will not proceed. Status will be set to 'FAILED' as an BusinessException."
         orchestrator_connection.log_error(
-            f"Termination date {queue_element_data.start_date} is greater than registration date {queue_element_data.start_date}.",
+            msg,
         )
-        msg = f"Termination date {queue_element_data.start_date} is greater than registration date {queue_element_data.start_date}."
         raise BusinessError(msg)
 
     # Create and save the invoice
@@ -49,7 +49,9 @@ def process(
     try:
         invoice_obj = create_invoice_handler(orchestrator_connection)
         create_and_save_invoice(
-            invoice_obj, queue_element_data, orchestrator_connection,
+            invoice_obj,
+            queue_element_data,
+            orchestrator_connection,
         )
     except BusinessError as error:
         orchestrator_connection.log_error(f"Business error: {error}")

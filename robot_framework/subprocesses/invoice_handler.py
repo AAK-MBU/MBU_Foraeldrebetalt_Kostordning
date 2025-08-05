@@ -52,7 +52,6 @@ class InvoiceHandler:
             popup = self.session.findById("/app/con[0]/ses[0]/wnd[1]")
             if popup:
                 error_message = popup.findById("usr/txtMESSTXT1").text
-                print(f"Popup message: {error_message}")
                 # If popup exists, check the message and click the button
                 if "CPR-nr:" in error_message:
                     popup.findById("tbar[0]/btn[0]").press()
@@ -65,8 +64,6 @@ class InvoiceHandler:
         except Exception:  # pylint: disable=broad-except
             # If popup does not exist, continue
             pass
-
-        print("break")
 
     def _create_invoice_row(
         self,
