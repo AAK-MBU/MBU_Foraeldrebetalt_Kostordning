@@ -1,52 +1,95 @@
-"""Check if the termination date in the database is set."""
+"""This module checks if there are any terminations in the database that occurred before the start date"""
 
 import os
+import logging
+from datetime import datetime, date
+from typing import Mapping, Any, Optional
 
-from OpenOrchestrator.database.queues import QueueElement
 from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
 
 
-def check_termination_date(termination_date: str, queue_element_data: QueueElement) -> bool:
-    """Check if the termination date in the database is set.
-
-    :param termination_date: The date to check against, typically 'ddmmyy'.
-    :param queue_element_data: Data from the queue element, expected to contain
-        'cpr' and 'instnr'.
-    :return: True if any termination date is set, False otherwise.
+def parse_ddmmyy_to_date(ddmmyy: str) -> date:
     """
-    db_url = os.getenv("OpenOrchestratorConnString")
-
-    if not db_url:
+    Parse 'ddmmyy' (e.g., '010725') into a date object (2025-07-01).
+    """
+    if not ddmmyy or len(ddmmyy) != 6 or not ddmmyy.isdigit():
         raise ValueError(
-            "Database connection string not set in environment variable 'OpenOrchestratorConnString'",
+            f"start_dato '{ddmmyy}' is not in expected 'ddmmyy' numeric format."
         )
-    if not termination_date:
-        raise ValueError("Termination date is not provided or is empty.")
-    if (
-        not queue_element_data
-        or "base_system_id" not in queue_element_data
-        or "institution_number" not in queue_element_data
-    ):
-        raise ValueError("Queue element data must contain 'base_system_id' and 'institution_number' keys.")
+    try:
+        return datetime.strptime(ddmmyy, "%d%m%y").date()
+    except ValueError as exc:
+        raise ValueError(f"Could not parse start_dato '{ddmmyy}': {exc}") from exc
 
-    engine = create_engine(db_url)
+
+def check_termination_date(
+    start_dato_ddmmyy: str,
+    queue_element_data: Mapping[str, Any],
+    engine: Optional[Engine] = None,
+) -> bool:
+    """
+    Return True if there exists a row in rpa.udmeldelserDT for the given CPR and institution number
+    where udmldato < start_dato (start_dato provided as 'ddmmyy').
+
+    :param start_dato_ddmmyy: Date in 'ddmmyy' format (e.g., '010725').
+    :param queue_element_data: Mapping containing 'base_system_id' and 'institution_number'.
+    :param engine: Optional SQLAlchemy Engine; if None, created from env var.
+    """
+    if not queue_element_data:
+        raise ValueError("queue_element_data must be provided and non-empty.")
+
+    try:
+        cpr = queue_element_data["base_system_id"]
+    except KeyError as exc:
+        raise ValueError(
+            "queue_element_data missing required key 'base_system_id'."
+        ) from exc
+
+    try:
+        instnr = queue_element_data["institution_number"]
+    except KeyError as exc:
+        raise ValueError(
+            "queue_element_data missing required key 'institution_number'."
+        ) from exc
+
+    start_date = parse_ddmmyy_to_date(start_dato_ddmmyy)
+
+    if engine is None:
+        db_url = os.getenv("OpenOrchestratorConnStringTest")
+        if not db_url:
+            raise EnvironmentError(
+                "Database connection string not set in environment variable "
+                "'OpenOrchestratorConnString'."
+            )
+        engine = create_engine(db_url, future=True)
+
+    sql = text(
+        """
+        SELECT TOP 1 1
+        FROM rpa.udmeldelserDT
+        WHERE cpr = :cpr
+          AND instnr = :instnr
+          AND TRY_CONVERT(date, udmldato) < :start_date
+        """
+    )
 
     with engine.connect() as connection:
-        query = text("""
-            SELECT COUNT(*) FROM rpa.udmeldelserDT
-            WHERE udmldato < :termination_date
-            AND cpr = :cpr
-            AND instnr = :instnr
-        """)
-
-        result = connection.execute(
-            query,
+        row = connection.execute(
+            sql,
             {
-                "termination_date": termination_date,
-                "cpr": queue_element_data.get('base_system_id'),
-                "instnr": queue_element_data.get('institution_number'),
+                "cpr": cpr,
+                "instnr": instnr,
+                "start_date": start_date,
             },
-        ).scalar()
-        print(f"Query result: {result}")
+        ).first()
 
-    return (result or 0) > 0
+    exists = row is not None
+    logging.debug(
+        "check_termination_before_start: cpr=%s instnr=%s start_date=%s exists=%s",
+        cpr,
+        instnr,
+        start_date.isoformat(),
+        exists,
+    )
+    return exists
