@@ -37,6 +37,7 @@ def process(
     )
 
     # Check if the termination date is set
+    print(f"Has termination date: {check_termination_date(queue_element_data.get("start_date"), queue_element_data)}")
     if check_termination_date(queue_element_data.get("start_date"), queue_element_data):
         msg = "Found termination date. Invoice creation will not proceed. Status will be set to 'FAILED' as an BusinessException."
         orchestrator_connection.log_error(
