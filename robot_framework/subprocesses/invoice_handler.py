@@ -231,8 +231,7 @@ class InvoiceHandler:
             exc_msg = self.get_status_from_statusbar()
             if exc_msg:
                 raise BusinessError(f"{exc_msg}") from e
-            else:
-                raise Exception(f"{e}") from e
+            raise Exception(f"{e}") from e
 
         try:
             self.session.findById(
@@ -241,10 +240,8 @@ class InvoiceHandler:
         except Exception as e:
             print(f"Error setting due date: {e}")
             exc_msg = self.get_status_from_statusbar()
-
             if exc_msg:
                 raise BusinessError(f"{exc_msg}") from e
-
             raise Exception(f"{e}") from e
 
         # Main transaction row
@@ -265,10 +262,8 @@ class InvoiceHandler:
             print(f"Error creating main transaction row. {e}")
             exc_msg = self.get_status_from_statusbar()
             self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
-
             if exc_msg:
                 raise BusinessError(f"{exc_msg}") from e
-
             raise Exception(f"{e}") from e
 
         # Insert new line
@@ -279,10 +274,8 @@ class InvoiceHandler:
             exc_msg = self.get_status_from_statusbar()
             self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
             print(f"Error inserting new line. {e}")
-
             if exc_msg:
                 raise BusinessError(f"{exc_msg}") from e
-
             raise Exception(f"{e}") from e
 
         # Sub administration fee row
@@ -303,10 +296,8 @@ class InvoiceHandler:
             exc_msg = self.get_status_from_statusbar()
             self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
             print(f"Error creating sub administration fee row. {e}")
-
             if exc_msg:
                 raise BusinessError(f"{exc_msg}") from e
-
             raise Exception(f"{e}") from e
 
         # Insert new line
