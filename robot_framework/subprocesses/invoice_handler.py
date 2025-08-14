@@ -1,5 +1,6 @@
 """This module contains a class and functions relating to creating an invoice in SAP."""
-
+# pylint: disable=broad-except
+# pylint: disable=broad-exception-raised
 import time
 
 from robot_framework.exceptions import BusinessError
@@ -26,6 +27,19 @@ class InvoiceHandler:
         """
         self.session = session
 
+    def get_status_from_statusbar(self) -> str | None:
+        """
+        Get the status message from the SAP status bar.
+
+        This function retrieves the status message displayed in the SAP status bar.
+        """
+        try:
+            status_message = self.session.findById("/app/con[0]/ses[0]/wnd[0]/sbar/pane[0]").text
+            return status_message
+        except Exception as e:
+            print(f"Error getting status from status bar. {e}")
+            return None
+
     def open_business_partner(
         self, business_partner_id: str, content_type: str, base_system_id: str
     ):
@@ -41,6 +55,18 @@ class InvoiceHandler:
         base_system_id : str
             Base system ID.
         """
+        try:
+            self.session.findById("wnd[0]/usr/ctxtLV_BP_IN")
+        except Exception:
+            # Go back and try again
+            self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
+            try:
+                self.session.findById("wnd[0]/usr/ctxtLV_BP_IN")
+            except Exception as e:
+                print("Business partner input field does not exist after going back.")
+                raise Exception("Business partner input field not found in SAP.") from e
+
+        # If found, continue
         self.session.findById("wnd[0]/usr/ctxtLV_BP_IN").text = business_partner_id
         self.session.findById("wnd[0]/usr/ctxtP_IHS_IN").text = content_type
         self.session.findById("wnd[0]/usr/txtP_NBS_IN").text = base_system_id
@@ -61,7 +87,7 @@ class InvoiceHandler:
         except BusinessError as be:
             print(f"Business error while checking popup: {be}")
             raise
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             # If popup does not exist, continue
             pass
 
@@ -200,12 +226,12 @@ class InvoiceHandler:
             self.open_business_partner(
                 business_partner_id, content_type, base_system_id
             )
-        except BusinessError as be:
-            print(f"Business error while opening business partner: {be}")
-            raise
         except Exception as e:
             print(f"Error opening business partner: {e}")
-            raise
+            exc_msg = self.get_status_from_statusbar()
+            if exc_msg:
+                raise BusinessError(f"{exc_msg}") from e
+            raise Exception(f"{e}") from e
 
         try:
             self.session.findById(
@@ -213,7 +239,10 @@ class InvoiceHandler:
             ).text = start_date
         except Exception as e:
             print(f"Error setting due date: {e}")
-            raise
+            exc_msg = self.get_status_from_statusbar()
+            if exc_msg:
+                raise BusinessError(f"{exc_msg}") from e
+            raise Exception(f"{e}") from e
 
         # Main transaction row
         try:
@@ -230,17 +259,24 @@ class InvoiceHandler:
                 business_partner_id,
             )
         except Exception as e:
-            self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
             print(f"Error creating main transaction row. {e}")
-            raise
+            exc_msg = self.get_status_from_statusbar()
+            self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
+            if exc_msg:
+                raise BusinessError(f"{exc_msg}") from e
+            raise Exception(f"{e}") from e
 
         # Insert new line
         try:
+            time.sleep(1)
             self.session.findById("wnd[0]/usr/btnINDSAETTXTBTN").press()
         except Exception as e:
+            exc_msg = self.get_status_from_statusbar()
             self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
             print(f"Error inserting new line. {e}")
-            raise
+            if exc_msg:
+                raise BusinessError(f"{exc_msg}") from e
+            raise Exception(f"{e}") from e
 
         # Sub administration fee row
         try:
@@ -257,17 +293,21 @@ class InvoiceHandler:
                 business_partner_id,
             )
         except Exception as e:
+            exc_msg = self.get_status_from_statusbar()
             self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
             print(f"Error creating sub administration fee row. {e}")
-            raise
+            if exc_msg:
+                raise BusinessError(f"{exc_msg}") from e
+            raise Exception(f"{e}") from e
 
         # Insert new line
         try:
             self.session.findById("wnd[0]/usr/btnINDSAETTXTBTN").press()
         except Exception as e:
+            exc_msg = self.get_status_from_statusbar()
             self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
             print(f"Error inserting new line. {e}")
-            raise
+            raise Exception(f"{exc_msg}") from e
 
         # Sub institution fee row
         try:
@@ -284,9 +324,14 @@ class InvoiceHandler:
                 business_partner_id,
             )
         except Exception as e:
+            exc_msg = self.get_status_from_statusbar()
             self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
             print(f"Error creating sub institution fee row. {e}")
-            raise
+
+            if exc_msg:
+                raise BusinessError(f"{exc_msg}") from e
+
+            raise Exception(f"{e}") from e
 
     def save_invoice(self):
         """
@@ -299,6 +344,11 @@ class InvoiceHandler:
             time.sleep(1)
             self.session.findById("/app/con[0]/ses[0]/wnd[1]/tbar[0]/btn[0]").press()
         except Exception as e:
+            exc_msg = self.get_status_from_statusbar()
             self.session.findById("/app/con[0]/ses[0]/wnd[0]/tbar[0]/btn[3]").press()
             print(f"Error saving invoice. {e}")
-            raise
+
+            if exc_msg:
+                raise BusinessError(f"{exc_msg}") from e
+
+            raise Exception(f"{e}") from e
