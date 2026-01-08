@@ -5,15 +5,11 @@
 
 import sys
 
-from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
 from OpenOrchestrator.database.queues import QueueStatus
+from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
 
-from robot_framework import initialize
-from robot_framework import reset
-from robot_framework.exceptions import handle_error, BusinessError, log_exception
-from robot_framework import process
-from robot_framework import config
-from robot_framework import finalize
+from robot_framework import config, finalize, initialize, process, reset
+from robot_framework.exceptions import BusinessError, handle_error, log_exception
 
 
 def main():

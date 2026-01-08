@@ -1,4 +1,5 @@
 """This module contains a class and functions relating to creating an invoice in SAP."""
+
 # pylint: disable=broad-except
 # pylint: disable=broad-exception-raised
 import time
@@ -34,7 +35,9 @@ class InvoiceHandler:
         This function retrieves the status message displayed in the SAP status bar.
         """
         try:
-            status_message = self.session.findById("/app/con[0]/ses[0]/wnd[0]/sbar/pane[0]").text
+            status_message = self.session.findById(
+                "/app/con[0]/ses[0]/wnd[0]/sbar/pane[0]"
+            ).text
             return status_message
         except Exception as e:
             print(f"Error getting status from status bar. {e}")

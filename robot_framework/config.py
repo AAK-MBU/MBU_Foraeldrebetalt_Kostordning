@@ -21,7 +21,7 @@ SERVICE_NOW_API_PROD_USER = "service_now_prod_user"
 # ----------------------
 
 # The name of the job queue (if any)
-QUEUE_NAME = 'bur.kostordning.main'
+QUEUE_NAME = "bur.kostordning.main"
 
 # The limit on how many queue elements to process
 MAX_TASK_COUNT = 3000

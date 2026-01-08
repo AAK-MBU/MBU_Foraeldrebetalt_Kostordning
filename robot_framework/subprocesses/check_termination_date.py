@@ -1,9 +1,9 @@
 """This module checks if there are any terminations in the database that occurred before the start date"""
 
-import os
 import logging
-from datetime import datetime, date
-from typing import Mapping, Any, Optional
+import os
+from datetime import date, datetime
+from typing import Any, Mapping, Optional
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
@@ -56,7 +56,7 @@ def check_termination_date(
     start_date = parse_ddmmyy_to_date(start_dato_ddmmyy)
 
     if engine is None:
-        db_url = os.getenv("OpenOrchestratorConnStringTest")
+        db_url = os.getenv("OpenOrchestratorConnString")
         if not db_url:
             raise EnvironmentError(
                 "Database connection string not set in environment variable "
@@ -66,11 +66,29 @@ def check_termination_date(
 
     sql = text(
         """
-        SELECT TOP 1 1
-        FROM rpa.udmeldelserDT
-        WHERE cpr = :cpr
-          AND instnr = :instnr
-          AND TRY_CONVERT(date, udmldato) < :start_date
+        SELECT
+            b.cpr,
+            b.instnr,
+            TRY_CONVERT(date, b.udmldato) AS udmeldt_dato
+        FROM rpa.udmeldelserDT b
+        WHERE b.cpr = :cpr
+        AND b.instnr = :instnr
+
+        -- udmeldt før start_date
+        AND TRY_CONVERT(date, b.udmldato) < :start_date
+
+        -- ikke genindmeldt før/til start_date
+        AND NOT EXISTS (
+                SELECT 1
+                FROM rpa.udmeldelserDT b2
+                WHERE b2.cpr = b.cpr
+                AND b2.instnr = b.instnr
+                AND TRY_CONVERT(date, b2.indmdato) > TRY_CONVERT(date, b.udmldato)
+                AND TRY_CONVERT(date, b2.indmdato) <= :start_date
+        )
+
+        -- ikke registreret som indmeldt
+        AND beskedtype != 'Indmeldels'
         """
     )
 

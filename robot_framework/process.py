@@ -54,8 +54,10 @@ def process(
             orchestrator_connection,
         )
     except BusinessError as error:
+        print(f"BusinessError processing queue element: {queue_element.reference}")
         orchestrator_connection.log_error(f"Business error: {error}")
         raise
     except Exception as error:
+        print(f"ApplicationError processing queue element: {queue_element.reference}")
         orchestrator_connection.log_error(f"Error processing invoice: {error}")
         raise

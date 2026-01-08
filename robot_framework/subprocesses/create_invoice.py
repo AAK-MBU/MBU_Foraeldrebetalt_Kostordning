@@ -9,7 +9,9 @@ from robot_framework.exceptions import BusinessError
 from robot_framework.subprocesses.invoice_handler import InvoiceHandler
 
 
-def create_invoice_handler(orchestrator_connection: OrchestratorConnection) -> InvoiceHandler:
+def create_invoice_handler(
+    orchestrator_connection: OrchestratorConnection,
+) -> InvoiceHandler:
     """Create and return an InvoiceHandler instance."""
     try:
         return InvoiceHandler(orchestrator_connection.sap_session)
@@ -34,9 +36,7 @@ def create_and_save_invoice(
             start_date=queue_element_data.get("start_date"),
             end_date=queue_element_data.get("end_date"),
             main_transaction_id=queue_element_data.get("main_transaction_id"),
-            main_transaction_amount=queue_element_data.get(
-                "main_transaction_amount"
-            ),
+            main_transaction_amount=queue_element_data.get("main_transaction_amount"),
             sub_transaction_id=queue_element_data.get("main_transaction_id"),
             sub_transaction_fee_adm_id="ADMG",
             sub_transaction_fee_adm_amount=queue_element_data.get(
@@ -56,7 +56,6 @@ def create_and_save_invoice(
             ),
         )
         invoice_obj.save_invoice()
-        print("Invoice created successfully.")
         orchestrator_connection.log_trace("Invoice created.")
     except BusinessError as e:
         print(f"Business error while creating invoice: {e}")
